@@ -1,0 +1,48 @@
+﻿# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-*
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs (don't commit real logs!)
+*.log
+!logs/sample_*.log  # Keep sample logs only
+
+# Generated reports
+report_*.txt
+report_*.json
+*.pdf
+*.html
+
+# Sensitive data
+credentials.json
+config.ini
+secrets.txt
+.env
+*.key
+*.pem
+
+# Test outputs
+test_*.txt
+temp_*
+debug_*
+output_*
+
+# Virtual environment
+*.env
