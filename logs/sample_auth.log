@@ -1,0 +1,11 @@
+May 15 10:12:34 ubuntu-server sshd[1234]: Failed password for invalid user bob from 192.168.1.10 port 22 ssh2
+May 15 10:12:35 ubuntu-server sshd[1235]: Accepted password for alice from 192.168.1.11 port 22 ssh2
+May 15 10:12:36 ubuntu-server sshd[1236]: Failed password for root from 192.168.1.10 port 22 ssh2
+May 15 10:12:37 ubuntu-server sshd[1237]: Failed password for root from 192.168.1.10 port 22 ssh2
+May 15 10:12:38 ubuntu-server sshd[1238]: Failed password for root from 192.168.1.10 port 22 ssh2
+May 15 10:12:39 ubuntu-server sshd[1239]: Failed password for root from 192.168.1.10 port 22 ssh2
+May 15 10:12:40 ubuntu-server sshd[1240]: Failed password for root from 192.168.1.10 port 22 ssh2
+May 15 10:12:41 ubuntu-server sshd[1241]: Failed password for root from 192.168.1.10 port 22 ssh2
+May 15 10:12:42 ubuntu-server sshd[1242]: Accepted password for root from 192.168.1.10 port 22 ssh2
+May 15 15:30:00 ubuntu-server sshd[1243]: Accepted password for charlie from 192.168.1.12 port 22 ssh2
+May 15 22:05:14 ubuntu-server sshd[1244]: Accepted password for dave from 192.168.1.13 port 22 ssh2

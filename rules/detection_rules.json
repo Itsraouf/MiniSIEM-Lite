@@ -1,0 +1,22 @@
+{
+  "brute_force": {
+    "description": "Multiple failed logins from same IP",
+    "log_type": ["auth", "ssh"],
+    "condition": "failed_login_count > 5",
+    "time_window": 300,
+    "severity": "HIGH"
+  },
+  "success_after_failure": {
+    "description": "Successful login after multiple failures from same IP",
+    "log_type": ["auth", "ssh"],
+    "condition": "success_after_failures",
+    "time_window": 600,
+    "severity": "MEDIUM"
+  },
+  "off_hours_login": {
+    "description": "Login outside normal hours (9AM-5PM)",
+    "log_type": ["auth", "ssh"],
+    "condition": "hour < 9 or hour > 17",
+    "severity": "LOW"
+  }
+}
