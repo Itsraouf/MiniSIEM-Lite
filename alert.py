@@ -3,12 +3,12 @@ from datetime import datetime
 
 class AlertManager:
     def __init__(self):
-        # Color codes for terminal
+
         self.colors = {
-            'HIGH': '\033[91m',    # Red
-            'MEDIUM': '\033[93m',  # Yellow
-            'LOW': '\033[92m',     # Green
-            'RESET': '\033[0m'     # Reset
+            'HIGH': '\033[91m',    
+            'MEDIUM': '\033[93m',  
+            'LOW': '\033[92m',     
+            'RESET': '\033[0m'     
         }
     
     def display_alert(self, alert):
@@ -25,7 +25,7 @@ class AlertManager:
         print(f"║ {'Rule:':<12} {alert['rule'][:46]:<46} ║")
         print(f"║ {'Time:':<12} {alert['timestamp'][:46]:<46} ║")
         print(f"╚{'═' * 60}╝")
-        print()  # Empty line for spacing
+        print()  
     
     def display_summary(self, alerts):
         """Display a summary of all alerts"""
