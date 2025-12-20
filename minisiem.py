@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 MiniSIEM-Lite - A Beginner-Friendly Log Analysis & Alerting Tool
 """
@@ -8,7 +7,6 @@ import sys
 import os
 from datetime import datetime
 
-# Import our modules
 from parser import LogParser
 from detector import DetectionEngine
 from alert import AlertManager
@@ -34,8 +32,8 @@ Detection Rules:
     parser.add_argument('-f', '--file', required=True,
                        help='Path to log file (e.g., logs/sample_auth.log)')
     parser.add_argument('-t', '--type', default='auth',
-                       choices=['auth', 'ssh'],
-                       help='Log type: auth (default) or ssh')
+                   choices=['auth', 'ssh', 'apache'],
+                   help='Log type: auth (default), ssh, or apache')
     parser.add_argument('-o', '--output',
                        help='Save report to file (JSON or TXT)')
     parser.add_argument('-v', '--verbose', action='store_true',
@@ -45,17 +43,14 @@ Detection Rules:
     
     args = parser.parse_args()
     
-    # Check if log file exists
     if not os.path.exists(args.file):
         print(f"❌ Error: Log file not found: {args.file}")
         sys.exit(1)
     
-    # Print banner
     print("=" * 60)
     print("🔍 MiniSIEM-Lite - Security Log Analysis")
     print("=" * 60)
     
-    # Step 1: Parse logs
     if args.verbose:
         print(f"[1/3] Parsing {args.type} log: {args.file}")
     
@@ -69,14 +64,11 @@ Detection Rules:
     if args.verbose:
         print(f"   ✓ Parsed {len(parsed_logs)} log entries")
     
-    # Step 2: Detect threats
     if args.verbose:
         print(f"[2/3] Analyzing with detection rules")
     
     detector = DetectionEngine(args.rules)
-    alerts = detector.analyze_logs(parsed_logs)
-    
-    # Step 3: Display alerts
+    alerts = detector.analyze_logs(parsed_logs, args.type)     
     if args.verbose:
         print(f"[3/3] Processing alerts")
     
@@ -92,7 +84,6 @@ Detection Rules:
         print("\n✅ No security alerts detected.")
         print("   All log entries appear normal.")
     
-    # Step 4: Generate report if requested
     if args.output:
         generate_report(alerts, args.output, args.file)
         print(f"\n📄 Report saved to: {args.output}")
@@ -115,7 +106,6 @@ def generate_report(alerts, output_file, source_file):
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(report_data, f, indent=2, ensure_ascii=False)
     else:
-        # TXT format
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write("=" * 60 + "\n")
             f.write("MiniSIEM-Lite Security Report\n")

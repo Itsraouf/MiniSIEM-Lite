@@ -4,127 +4,148 @@ from datetime import datetime
 
 class LogParser:
     def __init__(self):
-        # Updated regex patterns - more flexible
         self.patterns = {
-            'ssh': r'(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<host>\S+)\s+sshd\[(?P<pid>\d+)\]:\s+(?P<message>.*)',
-            'auth': r'(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<host>\S+)\s+sshd\[(?P<pid>\d+)\]:\s+(?P<message>.*)'
+            "ssh": r"(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<host>\S+)\s+sshd\[(?P<pid>\d+)\]:\s+(?P<message>.*)",
+            "auth": r"(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<host>\S+)\s+sshd\[(?P<pid>\d+)\]:\s+(?P<message>.*)",
+            "apache": r'(?P<ip>\S+) - - \[(?P<timestamp>.*?)\] "(?P<method>\w+) (?P<path>.*?) HTTP/\d\.\d" (?P<status>\d+) (?P<size>\S+)(?: "(?P<referrer>.*?)" "(?P<user_agent>.*?)")?',
         }
-        
-    def parse_line(self, line, log_type='auth'):
+
+    def parse_line(self, line, log_type="auth"):
         """Parse a single log line into structured data"""
         if log_type not in self.patterns:
             return None
-            
-        match = re.match(self.patterns[log_type], line)
+
+        match = re.match(self.patterns[log_type], line.strip())
         if not match:
-            # Try more flexible pattern
-            flexible_pattern = r'(?P<timestamp>\w+\s+\d+\s+\d+:\d+:\d+)\s+(?P<host>\S+)\s+(?P<service>\S+)\[(?P<pid>\d+)\]:\s+(?P<message>.*)'
-            match = re.match(flexible_pattern, line)
-            if not match:
-                print(f"[WARNING] Failed to parse line: {line[:50]}...")
-                return None
-            
+            return None
+
         log_entry = match.groupdict()
-        
-        # Extract additional details from message
-        log_entry['source_ip'] = self._extract_ip(log_entry['message'])
-        log_entry['user'] = self._extract_user(log_entry['message'])
-        log_entry['status'] = self._extract_status(log_entry['message'])
-        log_entry['timestamp'] = self._normalize_timestamp(log_entry['timestamp'])
-        
+
+        # Handle different log types
+        if log_type in ["auth", "ssh"]:
+            # SSH logs have 'message' field
+            if "message" in log_entry:
+                message = log_entry["message"]
+                log_entry["source_ip"] = self._extract_ip(message)
+                log_entry["user"] = self._extract_user(message)
+                log_entry["status"] = self._extract_status(message)
+            else:
+                log_entry["source_ip"] = None
+                log_entry["user"] = None
+                log_entry["status"] = "UNKNOWN"
+
+            # Parse timestamp
+            if "timestamp" in log_entry:
+                log_entry["timestamp"] = self._normalize_timestamp(log_entry["timestamp"])
+
+        elif log_type == "apache":
+            # Apache logs have 'ip' field, not 'source_ip'
+            if "ip" in log_entry:
+                ip = log_entry["ip"]
+                # Clean BOM if present
+                ip = ip.replace("ï»¿", "").strip()
+                log_entry["ip"] = ip
+                log_entry["source_ip"] = ip  # Add source_ip for consistency
+
+            # Parse Apache timestamp
+            if "timestamp" in log_entry:
+                log_entry["timestamp"] = self._parse_apache_timestamp(log_entry["timestamp"])
+
+            # Apache doesn't have user, but KEEP the HTTP status code!
+            log_entry["user"] = None
+            # DO NOT overwrite status - Apache already has HTTP status code (200, 404, etc.)
+            # log_entry["status"] = "UNKNOWN"  # REMOVE THIS LINE!
+
         return log_entry
-    
+
     def _extract_ip(self, message):
-        """Extract IP address from log message"""
-        ip_pattern = r'\b(?:\d{1,3}\.){3}\d{1,3}\b'
+        """Extract IP address from SSH log message"""
+        ip_pattern = r"\b(?:\d{1,3}\.){3}\d{1,3}\b"
         match = re.search(ip_pattern, message)
         return match.group(0) if match else None
-    
+
     def _extract_user(self, message):
-        """Extract username from log message"""
-        # Pattern for: "for invalid user bob" or "for root" or "for alice"
-        user_pattern = r'(?:for|user)\s+(?:invalid\s+user\s+)?(\w+)'
+        """Extract username from SSH log message"""
+        user_pattern = r"(?:for|user)\s+(?:invalid\s+user\s+)?(\w+)"
         match = re.search(user_pattern, message)
         return match.group(1) if match else None
-    
+
     def _extract_status(self, message):
-        """Extract success/failure status"""
+        """Extract success/failure status from SSH log"""
         message_lower = message.lower()
-        if 'accepted password' in message_lower:
-            return 'SUCCESS'
-        elif 'failed password' in message_lower:
-            return 'FAILURE'
-        return 'UNKNOWN'
-    
+        if "accepted password" in message_lower:
+            return "SUCCESS"
+        elif "failed password" in message_lower:
+            return "FAILURE"
+        return "UNKNOWN"
+
     def _normalize_timestamp(self, timestamp_str):
-        """Convert timestamp to datetime object"""
-        # Add current year since logs don't include it
+        """Convert SSH timestamp to datetime object"""
         current_year = datetime.now().year
         full_timestamp = f"{current_year} {timestamp_str}"
-        
+
         try:
-            return datetime.strptime(full_timestamp, '%Y %b %d %H:%M:%S')
+            return datetime.strptime(full_timestamp, "%Y %b %d %H:%M:%S")
         except ValueError:
             return timestamp_str
-    
-    def parse_file(self, filepath, log_type='auth'):
+
+    def _parse_apache_timestamp(self, timestamp_str):
+        """Convert Apache timestamp to datetime object"""
+        try:
+            # Handle Apache timestamp with timezone: "18/Dec/2024:10:30:45 -0500"
+            # Remove the colon in timezone for parsing
+            timestamp_str = timestamp_str.replace(' -', ' -').strip()
+            return datetime.strptime(timestamp_str, "%d/%b/%Y:%H:%M:%S %z")
+        except ValueError:
+            # Fallback: try without timezone
+            try:
+                timestamp_str = timestamp_str.split()[0]
+                return datetime.strptime(timestamp_str, "%d/%b/%Y:%H:%M:%S")
+            except ValueError:
+                return timestamp_str
+
+    def parse_file(self, filepath, log_type="auth"):
         """Parse entire log file"""
         parsed_logs = []
-        
+
         if not os.path.exists(filepath):
             print(f"[ERROR] File not found: {filepath}")
             return parsed_logs
-        
-        with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+
+        with open(filepath, "r", encoding="utf-8-sig", errors="ignore") as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
-                if line:  # Skip empty lines
+                if line:
                     parsed = self.parse_line(line, log_type)
                     if parsed:
                         parsed_logs.append(parsed)
-                    else:
-                        print(f"[WARNING] Line {line_num} failed to parse")
-        
+
         print(f"[SUCCESS] Parsed {len(parsed_logs)} logs from {filepath}")
         return parsed_logs
 
-# Quick test function
+
+# Test function
 if __name__ == "__main__":
     parser = LogParser()
-    
-    print("=" * 50)
-    print("TESTING LOG PARSER")
-    print("=" * 50)
-    
-    # Test with sample auth log
-    test_logs = parser.parse_file('logs/sample_auth.log', log_type='auth')
-    
-    if test_logs:
-        print(f"\n✓ First parsed log entry:")
-        for key, value in test_logs[0].items():
-            print(f"  {key}: {value}")
-        
-        print(f"\n✓ Total logs parsed: {len(test_logs)}")
-        
-        # Count statuses
-        status_count = {}
-        ip_count = {}
-        for log in test_logs:
-            status = log.get('status', 'UNKNOWN')
-            status_count[status] = status_count.get(status, 0) + 1
-            
-            ip = log.get('source_ip')
-            if ip:
-                ip_count[ip] = ip_count.get(ip, 0) + 1
-        
-        print(f"\n✓ Status breakdown:")
-        for status, count in status_count.items():
-            print(f"  {status}: {count}")
-        
-        print(f"\n✓ IP activity:")
-        for ip, count in ip_count.items():
-            print(f"  {ip}: {count} events")
-    else:
-        print("\n✗ No logs were parsed. Check file path and format.")
-    
-    print("\n" + "=" * 50)
+
+    print("=" * 60)
+    print("TESTING PARSER WITH ALL LOG TYPES")
+    print("=" * 60)
+
+    # Test SSH logs
+    print("\n[TEST 1] Testing SSH/Auth logs:")
+    ssh_logs = parser.parse_file("logs/sample_auth.log", log_type="auth")
+    if ssh_logs:
+        print(f"✓ Parsed {len(ssh_logs)} SSH logs")
+        print(f"  First log source_ip: {ssh_logs[0].get('source_ip')}")
+
+    # Test Apache logs
+    print("\n[TEST 2] Testing Apache logs:")
+    apache_logs = parser.parse_file("logs/sample_apache.log", log_type="apache")
+    if apache_logs:
+        print(f"✓ Parsed {len(apache_logs)} Apache logs")
+        print(f"  First log ip: {apache_logs[0].get('ip')}")
+        print(f"  First log path: {apache_logs[0].get('path')}")
+        print(f"  First log status: {apache_logs[0].get('status')}")  # Should show HTTP code!
+
+    print("\n" + "=" * 60)

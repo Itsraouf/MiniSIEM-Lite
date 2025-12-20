@@ -1,22 +1,46 @@
 {
-  "brute_force": {
-    "description": "Multiple failed logins from same IP",
+  "ssh_brute_force": {
+    "description": "Multiple failed SSH logins from same IP",
     "log_type": ["auth", "ssh"],
     "condition": "failed_login_count > 5",
     "time_window": 300,
     "severity": "HIGH"
   },
   "success_after_failure": {
-    "description": "Successful login after multiple failures from same IP",
+    "description": "SSH login success after multiple failures",
     "log_type": ["auth", "ssh"],
     "condition": "success_after_failures",
     "time_window": 600,
     "severity": "MEDIUM"
   },
   "off_hours_login": {
-    "description": "Login outside normal hours (9AM-5PM)",
+    "description": "SSH login outside normal hours (9AM-5PM)",
     "log_type": ["auth", "ssh"],
     "condition": "hour < 9 or hour > 17",
     "severity": "LOW"
+  },
+  "apache_sql_injection": {
+    "description": "Possible SQL injection attempt in web request",
+    "log_type": ["apache"],
+    "condition": "sql_injection_detected",
+    "severity": "HIGH"
+  },
+  "apache_directory_traversal": {
+    "description": "Directory traversal attempt in web request",
+    "log_type": ["apache"],
+    "condition": "directory_traversal_detected",
+    "severity": "HIGH"
+  },
+  "apache_admin_access": {
+    "description": "Access to admin pages without authentication",
+    "log_type": ["apache"],
+    "condition": "admin_page_access",
+    "severity": "MEDIUM"
+  },
+  "apache_php_exploit": {
+    "description": "Access to known vulnerable PHP files",
+    "log_type": ["apache"],
+    "condition": "vulnerable_php_access",
+    "severity": "MEDIUM"
   }
 }
