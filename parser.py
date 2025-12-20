@@ -39,23 +39,17 @@ class LogParser:
                 log_entry["timestamp"] = self._normalize_timestamp(log_entry["timestamp"])
 
         elif log_type == "apache":
-            # Apache logs have 'ip' field, not 'source_ip'
+            
             if "ip" in log_entry:
                 ip = log_entry["ip"]
-                # Clean BOM if present
                 ip = ip.replace("ï»¿", "").strip()
                 log_entry["ip"] = ip
-                log_entry["source_ip"] = ip  # Add source_ip for consistency
-
+                log_entry["source_ip"] = ip  
             # Parse Apache timestamp
             if "timestamp" in log_entry:
                 log_entry["timestamp"] = self._parse_apache_timestamp(log_entry["timestamp"])
-
-            # Apache doesn't have user, but KEEP the HTTP status code!
             log_entry["user"] = None
-            # DO NOT overwrite status - Apache already has HTTP status code (200, 404, etc.)
-            # log_entry["status"] = "UNKNOWN"  # REMOVE THIS LINE!
-
+            
         return log_entry
 
     def _extract_ip(self, message):
@@ -92,12 +86,10 @@ class LogParser:
     def _parse_apache_timestamp(self, timestamp_str):
         """Convert Apache timestamp to datetime object"""
         try:
-            # Handle Apache timestamp with timezone: "18/Dec/2024:10:30:45 -0500"
-            # Remove the colon in timezone for parsing
             timestamp_str = timestamp_str.replace(' -', ' -').strip()
             return datetime.strptime(timestamp_str, "%d/%b/%Y:%H:%M:%S %z")
         except ValueError:
-            # Fallback: try without timezone
+            
             try:
                 timestamp_str = timestamp_str.split()[0]
                 return datetime.strptime(timestamp_str, "%d/%b/%Y:%H:%M:%S")
@@ -146,6 +138,6 @@ if __name__ == "__main__":
         print(f"✓ Parsed {len(apache_logs)} Apache logs")
         print(f"  First log ip: {apache_logs[0].get('ip')}")
         print(f"  First log path: {apache_logs[0].get('path')}")
-        print(f"  First log status: {apache_logs[0].get('status')}")  # Should show HTTP code!
+        print(f"  First log status: {apache_logs[0].get('status')}") 
 
     print("\n" + "=" * 60)
