@@ -195,7 +195,7 @@ class DetectionEngine:
                             'ip_address': log.get('ip'),
                             'path': path,
                             'method': log.get('method'),
-                            'timestamp': timestamp_str  # FIXED: Use log timestamp
+                            'timestamp': timestamp_str  
                         }
                         self.alerts.append(alert)
                         break
@@ -228,7 +228,7 @@ class DetectionEngine:
                             'ip_address': log.get('ip'),
                             'path': path,
                             'method': log.get('method'),
-                            'timestamp': timestamp_str  # FIXED: Use log timestamp
+                            'timestamp': timestamp_str  
                         }
                         self.alerts.append(alert)
                         break
@@ -250,9 +250,9 @@ class DetectionEngine:
                 path = log['path'].lower()
                 for admin_path in admin_paths:
                     if admin_path in path:
-                        # FIXED: Alert on any access to admin pages (200, 403, etc.)
+                        
                         status = str(log.get('status', ''))
-                        if status.isdigit() and int(status) < 500:  # Any non-server error status
+                        if status.isdigit() and int(status) < 500:  
                             log_timestamp = log.get('timestamp', datetime.now())
                             timestamp_str = log_timestamp.strftime('%Y-%m-%d %H:%M:%S') if isinstance(log_timestamp, datetime) else datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                             
@@ -264,7 +264,7 @@ class DetectionEngine:
                                 'ip_address': log.get('ip'),
                                 'path': path,
                                 'status': status,
-                                'timestamp': timestamp_str  # FIXED: Use log timestamp
+                                'timestamp': timestamp_str  
                             }
                             self.alerts.append(alert)
                             break
@@ -298,7 +298,7 @@ class DetectionEngine:
                             'ip_address': log.get('ip'),
                             'path': path,
                             'method': log.get('method'),
-                            'timestamp': timestamp_str  # FIXED: Use log timestamp
+                            'timestamp': timestamp_str  
                         }
                         self.alerts.append(alert)
                         break
